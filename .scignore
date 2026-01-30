@@ -1,0 +1,7 @@
+.ice/checklist.json
+.ice/cost.json
+.ice/flow.config.json
+.ice/resources/architecture_doc.md
+.ice/resources/client_need.md
+.ice/resources/design_doc.md
+xprim-models

@@ -1,0 +1,515 @@
+{
+  "items": [
+    {
+      "id": "setup_module",
+      "name": "Initialize Go module structure, go.mod with dependencies, and directory layout",
+      "completed": true,
+      "subItems": [
+        {
+          "id": "setup_module_gomod",
+          "name": "Create go.mod with module path github.com/prethora/xprim-models, Go 1.22+, and dependencies (cobra v1.8.0, progressbar/v3 v3.17.0)",
+          "completed": true,
+          "checkpoint": false
+        },
+        {
+          "id": "setup_module_directories",
+          "name": "Create directory structure: models/ package root and cmd/xprim-models/ for CLI harness",
+          "completed": true,
+          "checkpoint": false
+        },
+        {
+          "id": "setup_module_placeholder",
+          "name": "Create minimal doc.go with package comment to establish the models package",
+          "completed": true,
+          "checkpoint": false
+        },
+        {
+          "id": "setup_module_verify",
+          "name": "Run go mod tidy and go build ./... to verify module setup compiles correctly",
+          "completed": true,
+          "checkpoint": true
+        }
+      ]
+    },
+    {
+      "id": "pkg_errors",
+      "name": "Implement sentinel errors (ErrModelNotFound, ErrVersionNotFound, ErrNotInstalled, etc.)",
+      "completed": true,
+      "subItems": [
+        {
+          "id": "pkg_errors_sentinels",
+          "name": "Create errors.go with all 9 sentinel errors (ErrModelNotFound, ErrVersionNotFound, ErrNotInstalled, ErrAlreadyInstalled, ErrHashMismatch, ErrNetworkError, ErrStorageError, ErrInvalidRef, ErrRegistryError) with doc comments",
+          "completed": true,
+          "checkpoint": false
+        },
+        {
+          "id": "pkg_errors_tests",
+          "name": "Create errors_test.go with tests verifying each error has correct message prefix 'models: ' and that errors.Is() works correctly with wrapped errors",
+          "completed": true,
+          "checkpoint": true
+        }
+      ]
+    },
+    {
+      "id": "pkg_types",
+      "name": "Implement core types: Config, ModelRef, FileInfo, InstalledModel, RemoteModel, RemoteModelDetail, PullProgress",
+      "completed": true,
+      "subItems": [
+        {
+          "id": "pkg_types_config",
+          "name": "Create types.go with Config struct (AppName, RegistryURL, DataDir string fields) with doc comments",
+          "completed": true,
+          "checkpoint": false
+        },
+        {
+          "id": "pkg_types_modelref",
+          "name": "Add ModelRef struct (Group, Model, Version string fields), String() method returning 'group/model version', and ParseModelRef(s string) function that parses 'group/model version' format",
+          "completed": true,
+          "checkpoint": false
+        },
+        {
+          "id": "pkg_types_fileinfo",
+          "name": "Add FileInfo struct (Path string, Size int64) for describing files within a model",
+          "completed": true,
+          "checkpoint": false
+        },
+        {
+          "id": "pkg_types_installed",
+          "name": "Add InstalledModel struct (Ref ModelRef, ManifestHash string, TotalSize int64, FileCount int, InstalledAt time.Time, Path string)",
+          "completed": true,
+          "checkpoint": false
+        },
+        {
+          "id": "pkg_types_remote",
+          "name": "Add RemoteModel struct (Ref ModelRef, ManifestHash string, AliasOf string, Metadata map[string]any) and RemoteModelDetail struct embedding RemoteModel with TotalSize, ChunkSize int64, ChunkCount int, Files []FileInfo",
+          "completed": true,
+          "checkpoint": false
+        },
+        {
+          "id": "pkg_types_progress",
+          "name": "Add PullProgress struct (Phase string, ChunksTotal/ChunksCompleted int, BytesTotal/BytesCompleted int64, CurrentFile string)",
+          "completed": true,
+          "checkpoint": false
+        },
+        {
+          "id": "pkg_types_tests",
+          "name": "Create types_test.go with tests for ModelRef.String(), ParseModelRef() including valid formats and error cases (ErrInvalidRef)",
+          "completed": true,
+          "checkpoint": true
+        }
+      ]
+    },
+    {
+      "id": "pkg_options",
+      "name": "Implement options: PullOption, ManagerOption, WithForce, WithConcurrency, WithProgress, WithHTTPClient, WithLogger, HTTPClient/Logger interfaces",
+      "completed": true,
+      "subItems": [
+        {
+          "id": "pkg_options_constants",
+          "name": "Create options.go with concurrency constants (DefaultConcurrency=4, MaxConcurrency=16) and retry constants (MaxRetries=3, InitialBackoff=1s, MaxBackoff=4s, DefaultRequestTimeout=30s)",
+          "completed": true,
+          "checkpoint": false
+        },
+        {
+          "id": "pkg_options_pull",
+          "name": "Add PullOption type, pullConfig struct (force bool, concurrency int, progressFn), and WithForce(), WithConcurrency(n int), WithProgress(fn) functions",
+          "completed": true,
+          "checkpoint": false
+        },
+        {
+          "id": "pkg_options_manager",
+          "name": "Add ManagerOption type, managerConfig struct (httpClient, logger), and WithHTTPClient(client HTTPClient), WithLogger(logger Logger) functions",
+          "completed": true,
+          "checkpoint": false
+        },
+        {
+          "id": "pkg_options_interfaces",
+          "name": "Add HTTPClient interface (Do method) and Logger interface (Debug, Info, Warn, Error methods with keysAndValues variadic)",
+          "completed": true,
+          "checkpoint": false
+        },
+        {
+          "id": "pkg_options_tests",
+          "name": "Create options_test.go with tests for WithConcurrency clamping (values clamped to [1, MaxConcurrency]), WithForce setting, WithProgress callback assignment",
+          "completed": true,
+          "checkpoint": true
+        }
+      ]
+    },
+    {
+      "id": "pkg_storage",
+      "name": "Implement storage layer: localRegistry type, storageInterface, storage struct, atomic operations, platform-specific path resolution",
+      "completed": true,
+      "subItems": [
+        {
+          "id": "pkg_storage_types",
+          "name": "Create storage.go with localRegistry type (nested maps), installedModelEntry struct with JSON tags, and storageInterface interface with all method signatures",
+          "completed": true,
+          "checkpoint": false
+        },
+        {
+          "id": "pkg_storage_struct",
+          "name": "Add storage struct (baseDir string, registryMu sync.RWMutex), newStorage(cfg Config) constructor with env var override and platform default, and envVarName helper",
+          "completed": true,
+          "checkpoint": false
+        },
+        {
+          "id": "pkg_storage_registry",
+          "name": "Implement loadRegistry (read JSON, handle missing file) and saveRegistry (marshal, atomicWrite) methods on storage",
+          "completed": true,
+          "checkpoint": false
+        },
+        {
+          "id": "pkg_storage_paths",
+          "name": "Implement modelPath (baseDir/group/model/version), chunkCachePath (baseDir/.chunks), ensureDir (os.MkdirAll) methods",
+          "completed": true,
+          "checkpoint": false
+        },
+        {
+          "id": "pkg_storage_atomic",
+          "name": "Implement atomicWrite (write to temp file then rename), removeModelDir (os.RemoveAll), and saveManifest (marshal manifest to .manifest.json) methods",
+          "completed": true,
+          "checkpoint": false
+        },
+        {
+          "id": "pkg_storage_darwin",
+          "name": "Create storage_darwin.go with //go:build darwin tag and getDefaultDataDir returning ~/Library/Application Support/<appName>/models/",
+          "completed": true,
+          "checkpoint": false
+        },
+        {
+          "id": "pkg_storage_linux",
+          "name": "Create storage_linux.go with //go:build linux tag and getDefaultDataDir using $XDG_DATA_HOME or ~/.local/share/<appName>/models/",
+          "completed": true,
+          "checkpoint": false
+        },
+        {
+          "id": "pkg_storage_windows",
+          "name": "Create storage_windows.go with //go:build windows tag and getDefaultDataDir returning %APPDATA%\\<appName>\\models\\",
+          "completed": true,
+          "checkpoint": false
+        },
+        {
+          "id": "pkg_storage_tests",
+          "name": "Create storage_test.go with tests for envVarName, localRegistry operations, atomicWrite (verify atomic rename), loadRegistry/saveRegistry round-trip",
+          "completed": true,
+          "checkpoint": true
+        }
+      ]
+    },
+    {
+      "id": "pkg_registry",
+      "name": "Implement registry client: modelsIndex, modelEntry, versionEntry, manifest types, registryClient with fetchModelsIndex, fetchManifest, fetchChunk",
+      "completed": true,
+      "subItems": [
+        {
+          "id": "pkg_registry_index_types",
+          "name": "Create registry.go with modelsIndex type (map[string]map[string]modelEntry), modelEntry struct (Versions map, Metadata map), and versionEntry struct (ManifestHash, AliasOf)",
+          "completed": true,
+          "checkpoint": false
+        },
+        {
+          "id": "pkg_registry_manifest_types",
+          "name": "Add manifest struct (TotalSize, ChunkSize int64, Chunks []string, Files []manifestFile) and manifestFile struct (Path string, Size int64) with JSON tags",
+          "completed": true,
+          "checkpoint": false
+        },
+        {
+          "id": "pkg_registry_client_struct",
+          "name": "Add registryClient struct (baseURL, httpClient HTTPClient, logger Logger) and newRegistryClient constructor",
+          "completed": true,
+          "checkpoint": false
+        },
+        {
+          "id": "pkg_registry_fetch_index",
+          "name": "Implement fetchModelsIndex method: GET /models.json, parse JSON, wrap errors with ErrNetworkError/ErrRegistryError",
+          "completed": true,
+          "checkpoint": false
+        },
+        {
+          "id": "pkg_registry_fetch_manifest",
+          "name": "Implement fetchManifest method: GET /data/<hash>, parse JSON manifest, return ErrModelNotFound on 404",
+          "completed": true,
+          "checkpoint": false
+        },
+        {
+          "id": "pkg_registry_fetch_chunk",
+          "name": "Implement fetchChunk method: GET /data/<hash>, return raw bytes, caller verifies hash",
+          "completed": true,
+          "checkpoint": false
+        },
+        {
+          "id": "pkg_registry_tests",
+          "name": "Create registry_test.go with tests using httptest.Server: fetchModelsIndex parsing, fetchManifest success/404, fetchChunk success, error wrapping with ErrNetworkError/ErrRegistryError",
+          "completed": true,
+          "checkpoint": true
+        }
+      ]
+    },
+    {
+      "id": "pkg_download",
+      "name": "Implement download engine: chunkJob, downloadResult, verifyHash, downloadEngine, chunkCache with concurrent chunk downloading",
+      "completed": true,
+      "subItems": [
+        {
+          "id": "pkg_download_verify",
+          "name": "Create download.go with verifyHash function: compute SHA-256 of data, compare to expectedHash (lowercase hex), return nil or ErrHashMismatch",
+          "completed": true,
+          "checkpoint": false
+        },
+        {
+          "id": "pkg_download_types",
+          "name": "Add chunkJob struct (hash string, index int, size int64) and downloadResult struct (index int, err error)",
+          "completed": true,
+          "checkpoint": false
+        },
+        {
+          "id": "pkg_download_cache",
+          "name": "Add chunkCache struct (cacheDir string, mu sync.RWMutex) with newChunkCache, get, put, delete, cleanup methods",
+          "completed": true,
+          "checkpoint": false
+        },
+        {
+          "id": "pkg_download_engine",
+          "name": "Add downloadEngine struct (registry, storage, logger, errChan chan error, wg sync.WaitGroup) and newDownloadEngine constructor",
+          "completed": true,
+          "checkpoint": false
+        },
+        {
+          "id": "pkg_download_chunks",
+          "name": "Implement downloadChunks method: worker pool pattern, check cache before download, verify hash, store in cache, call progressFn, handle context cancellation",
+          "completed": true,
+          "checkpoint": false
+        },
+        {
+          "id": "pkg_download_tests",
+          "name": "Create download_test.go with tests for verifyHash (success/mismatch), chunkCache operations, downloadChunks with mock registry (concurrent downloads, progress callbacks, error handling)",
+          "completed": true,
+          "checkpoint": true
+        }
+      ]
+    },
+    {
+      "id": "pkg_reconstruct",
+      "name": "Implement file reconstructor: fileReconstructor, chunkStreamReader for streaming files from cached chunks",
+      "completed": true,
+      "subItems": [
+        {
+          "id": "pkg_reconstruct_stream",
+          "name": "Create reconstruct.go with chunkStreamReader struct (chunks []string, cache *chunkCache, currentChunk int, currentData []byte, totalRead int64) implementing io.Reader",
+          "completed": true,
+          "checkpoint": false
+        },
+        {
+          "id": "pkg_reconstruct_reader",
+          "name": "Implement newChunkStreamReader constructor and Read method that streams sequentially through chunks, returning io.EOF when done",
+          "completed": true,
+          "checkpoint": false
+        },
+        {
+          "id": "pkg_reconstruct_struct",
+          "name": "Add fileReconstructor struct (chunkCache *chunkCache, storage storageInterface) and newFileReconstructor constructor",
+          "completed": true,
+          "checkpoint": false
+        },
+        {
+          "id": "pkg_reconstruct_method",
+          "name": "Implement reconstruct method: iterate manifest.Files, use chunkStreamReader + io.CopyN to write each file, call progressFn with currentFile, handle context cancellation",
+          "completed": true,
+          "checkpoint": false
+        },
+        {
+          "id": "pkg_reconstruct_tests",
+          "name": "Create reconstruct_test.go with tests for chunkStreamReader (single chunk, multiple chunks, empty), fileReconstructor (reconstruct files from cached chunks, verify file contents and sizes)",
+          "completed": true,
+          "checkpoint": true
+        }
+      ]
+    },
+    {
+      "id": "pkg_manager",
+      "name": "Implement manager struct with all Manager interface methods: ListInstalled, ListRemote, GetInstalled, GetRemote, Pull, Remove, Path, CheckUpdate",
+      "completed": true,
+      "subItems": [
+        {
+          "id": "pkg_manager_struct",
+          "name": "Create manager.go with manager struct (cfg, httpClient, logger, storage, registry, downloadMu) - no constructor yet as that goes in public API",
+          "completed": true,
+          "checkpoint": false
+        },
+        {
+          "id": "pkg_manager_list",
+          "name": "Implement ListInstalled (iterate local registry), ListRemote (fetch index, flatten to []RemoteModel), ListRemoteGroup, ListRemoteVersions methods",
+          "completed": true,
+          "checkpoint": false
+        },
+        {
+          "id": "pkg_manager_get",
+          "name": "Implement GetInstalled (lookup in registry, return ErrNotInstalled), GetRemote (fetch index, lookup, return ErrModelNotFound), GetRemoteDetail (fetch manifest, build detail) methods",
+          "completed": true,
+          "checkpoint": false
+        },
+        {
+          "id": "pkg_manager_pull",
+          "name": "Implement Pull method: check installed, fetch manifest, download chunks via downloadEngine, reconstruct files, update registry, cleanup cache",
+          "completed": true,
+          "checkpoint": false
+        },
+        {
+          "id": "pkg_manager_remove",
+          "name": "Implement Remove (delete model dir, update registry, return ErrNotInstalled if missing) and RemoveAll (iterate versions, continue on error) methods",
+          "completed": true,
+          "checkpoint": false
+        },
+        {
+          "id": "pkg_manager_utils",
+          "name": "Implement Path (return model directory path, ErrNotInstalled if not installed) and CheckUpdate (compare installed vs remote manifest hash) methods",
+          "completed": true,
+          "checkpoint": false
+        },
+        {
+          "id": "pkg_manager_tests",
+          "name": "Create manager_test.go with tests using mock storage and httptest: ListInstalled, GetInstalled/ErrNotInstalled, Pull flow, Remove/ErrNotInstalled, CheckUpdate",
+          "completed": true,
+          "checkpoint": true
+        }
+      ]
+    },
+    {
+      "id": "pkg_public_api",
+      "name": "Implement public API surface: Manager interface definition, NewManager constructor, validation logic",
+      "completed": true,
+      "subItems": [
+        {
+          "id": "pkg_public_api_interface",
+          "name": "Create models.go with Manager interface defining all 12 methods (ListInstalled, ListRemote, ListRemoteGroup, ListRemoteVersions, GetInstalled, GetRemote, GetRemoteDetail, Pull, Remove, RemoveAll, Path, CheckUpdate)",
+          "completed": true,
+          "checkpoint": false
+        },
+        {
+          "id": "pkg_public_api_constructor",
+          "name": "Implement NewManager(cfg Config, opts ...ManagerOption) (Manager, error): validate AppName/RegistryURL not empty, create storage, create registryClient, return *manager",
+          "completed": true,
+          "checkpoint": false
+        },
+        {
+          "id": "pkg_public_api_tests",
+          "name": "Create models_test.go with tests for NewManager validation (empty AppName, empty RegistryURL errors), successful creation, and verify returned Manager implements interface",
+          "completed": true,
+          "checkpoint": true
+        }
+      ]
+    },
+    {
+      "id": "pkg_commands",
+      "name": "Implement Cobra commands: list, pull, remove, info, path, update with flags (--json, --quiet, --verbose, --force, --all, --remote, --apply)",
+      "completed": true,
+      "subItems": [
+        {
+          "id": "pkg_commands_root",
+          "name": "Create commands.go with NewCommand function returning root 'models' command with global flags (--json, --quiet, --verbose) and PersistentPreRunE to create manager",
+          "completed": true,
+          "checkpoint": false
+        },
+        {
+          "id": "pkg_commands_list",
+          "name": "Add 'list' subcommand: show installed models by default, --remote flag to show registry models, respect --json output format",
+          "completed": true,
+          "checkpoint": false
+        },
+        {
+          "id": "pkg_commands_pull",
+          "name": "Add 'pull' subcommand: args <group/model> <version>, --force flag, progress bar display (unless --quiet), error handling",
+          "completed": true,
+          "checkpoint": false
+        },
+        {
+          "id": "pkg_commands_remove",
+          "name": "Add 'remove' subcommand: args <group/model> <version>, --all flag to remove all versions of model",
+          "completed": true,
+          "checkpoint": false
+        },
+        {
+          "id": "pkg_commands_info",
+          "name": "Add 'info' subcommand: args <group/model> <version>, show installed info by default, --remote flag for registry info, --json output",
+          "completed": true,
+          "checkpoint": false
+        },
+        {
+          "id": "pkg_commands_utils",
+          "name": "Add 'path' subcommand (print model directory path) and 'update' subcommand (check for updates, --apply to auto-update)",
+          "completed": true,
+          "checkpoint": false
+        },
+        {
+          "id": "pkg_commands_tests",
+          "name": "Create commands_test.go with tests for command creation, flag parsing, and basic execution with mock manager",
+          "completed": true,
+          "checkpoint": true
+        }
+      ]
+    },
+    {
+      "id": "cli_harness",
+      "name": "Implement test CLI harness (cmd/xprim-models/main.go) with exit codes and environment variable handling",
+      "completed": true,
+      "subItems": [
+        {
+          "id": "cli_harness_exit_codes",
+          "name": "Create cmd/xprim-models/main.go with exit code constants (ExitSuccess=0, ExitGeneralError=1, ExitInvalidArgs=2, ExitModelNotFound=3, ExitNotInstalled=4, ExitNetworkError=5, ExitHashMismatch=6, ExitStorageError=7)",
+          "completed": true,
+          "checkpoint": false
+        },
+        {
+          "id": "cli_harness_main",
+          "name": "Implement main() function: read XPRIM_REGISTRY_URL env var, create Config, call NewCommand, execute with os.Exit(exitCodeFromError(err))",
+          "completed": true,
+          "checkpoint": false
+        },
+        {
+          "id": "cli_harness_error_mapping",
+          "name": "Implement exitCodeFromError(err error) int: map ErrModelNotFound->3, ErrNotInstalled->4, ErrNetworkError->5, ErrHashMismatch->6, ErrStorageError->7, default->1",
+          "completed": true,
+          "checkpoint": false
+        },
+        {
+          "id": "cli_harness_verify",
+          "name": "Verify CLI builds and runs: go build ./cmd/xprim-models, test --help output, verify exit codes work",
+          "completed": true,
+          "checkpoint": true
+        }
+      ]
+    },
+    {
+      "id": "finalize",
+      "name": "Final integration tests, cross-platform verification, documentation review, cleanup",
+      "completed": true,
+      "subItems": [
+        {
+          "id": "finalize_build_all",
+          "name": "Run go build ./... and go vet ./... to ensure everything compiles cleanly with no warnings",
+          "completed": true,
+          "checkpoint": false
+        },
+        {
+          "id": "finalize_test_all",
+          "name": "Run go test ./... to verify all tests pass, document total test count (55 tests: 12 top-level + 43 subtests)",
+          "completed": true,
+          "checkpoint": false
+        },
+        {
+          "id": "finalize_doc_review",
+          "name": "Review doc.go package documentation, verify all exported symbols have doc comments (go doc check)",
+          "completed": true,
+          "checkpoint": false
+        },
+        {
+          "id": "finalize_complete",
+          "name": "Mark implementation complete: all 13 top-level items done, package ready for use",
+          "completed": true,
+          "checkpoint": true
+        }
+      ]
+    }
+  ]
+}
