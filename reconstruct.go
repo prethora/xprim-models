@@ -10,6 +10,7 @@ import (
 
 // chunkStreamReader provides an io.Reader interface over a sequence of chunks.
 // This allows files to be written without loading all chunks into memory.
+// Chunks are deleted incrementally as they are fully consumed to minimize disk space usage.
 type chunkStreamReader struct {
 	// chunks is the ordered list of chunk hashes.
 	chunks []string
@@ -25,6 +26,10 @@ type chunkStreamReader struct {
 
 	// totalRead tracks bytes read across all chunks.
 	totalRead int64
+
+	// lastDeletedChunk tracks which chunks have been deleted.
+	// All chunks with index < lastDeletedChunk have been deleted.
+	lastDeletedChunk int
 }
 
 // newChunkStreamReader creates a reader that streams through the given chunks.
@@ -36,6 +41,7 @@ func newChunkStreamReader(chunks []string, cache *chunkCache) *chunkStreamReader
 }
 
 // Read implements io.Reader, reading sequentially through all chunks.
+// Chunks are deleted incrementally as they are fully consumed.
 func (r *chunkStreamReader) Read(p []byte) (n int, err error) {
 	// If current buffer is empty, load next chunk
 	for len(r.currentData) == 0 {
@@ -51,6 +57,19 @@ func (r *chunkStreamReader) Read(p []byte) (n int, err error) {
 
 		r.currentData = data
 		r.currentChunk++
+
+		// Delete the chunk that was previously in currentData (now fully consumed).
+		// After incrementing currentChunk:
+		//   - currentChunk-1 = chunk we just loaded (still in currentData, needed)
+		//   - currentChunk-2 = chunk that was previously in currentData (fully consumed, deletable)
+		if r.currentChunk >= 2 {
+			prevChunkIdx := r.currentChunk - 2
+			if prevChunkIdx >= r.lastDeletedChunk {
+				prevHash := r.chunks[prevChunkIdx]
+				r.cache.delete(prevHash) // Ignore errors - best effort cleanup
+				r.lastDeletedChunk = prevChunkIdx + 1
+			}
+		}
 	}
 
 	// Copy from current buffer to output
@@ -59,6 +78,14 @@ func (r *chunkStreamReader) Read(p []byte) (n int, err error) {
 	r.totalRead += int64(n)
 
 	return n, nil
+}
+
+// deleteRemainingChunks cleans up any chunks not yet deleted.
+// Call this after reconstruction completes successfully.
+func (r *chunkStreamReader) deleteRemainingChunks() {
+	for i := r.lastDeletedChunk; i < len(r.chunks); i++ {
+		r.cache.delete(r.chunks[i]) // Ignore errors - best effort cleanup
+	}
 }
 
 // Ensure chunkStreamReader implements io.Reader.
@@ -137,6 +164,9 @@ func (f *fileReconstructor) reconstruct(ctx context.Context, mf manifest, ref Mo
 			return fmt.Errorf("file %s: wrote %d bytes, expected %d", file.Path, written, file.Size)
 		}
 	}
+
+	// Clean up any remaining cached chunks
+	reader.deleteRemainingChunks()
 
 	return nil
 }

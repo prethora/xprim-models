@@ -3,6 +3,7 @@ package models
 import (
 	"context"
 	"fmt"
+	"path/filepath"
 	"sync"
 	"time"
 )
@@ -243,6 +244,22 @@ func (m *manager) Pull(ctx context.Context, ref ModelRef, opts ...PullOption) er
 
 	m.downloadMu.Lock()
 	defer m.downloadMu.Unlock()
+
+	// Acquire cross-process lock for this specific model
+	// This prevents concurrent pulls of the same model from different processes
+	modelDir := m.storage.modelPath(ref)
+	if err := m.storage.ensureDir(modelDir); err != nil {
+		return fmt.Errorf("creating model directory: %w", err)
+	}
+	lockPath := filepath.Join(modelDir, ".pull.lock")
+	pullLock, err := newFileLock(lockPath, DefaultLockTimeout)
+	if err != nil {
+		return fmt.Errorf("%w: failed to create pull lock: %v", ErrStorageError, err)
+	}
+	if err := pullLock.Lock(); err != nil {
+		return fmt.Errorf("%w: another process is pulling this model: %v", ErrStorageError, err)
+	}
+	defer pullLock.Unlock()
 
 	// Check if already installed
 	if !cfg.force {

@@ -432,7 +432,8 @@ type manager struct {
 	// registry handles remote registry communication.
 	registry *registryClient
 
-	// downloadMu serializes pull operations for the same model.
+	// downloadMu serializes pull operations within a single process.
+	// Cross-process serialization uses file locking ({modelDir}/.pull.lock).
 	downloadMu sync.Mutex
 }
 
@@ -893,6 +894,7 @@ func (f *fileReconstructor) reconstruct(ctx context.Context, mf manifest, ref Mo
 
 // chunkStreamReader provides an io.Reader interface over a sequence of chunks.
 // This allows files to be written without loading all chunks into memory.
+// Chunks are deleted incrementally as they are fully consumed to minimize disk space usage.
 type chunkStreamReader struct {
 	// chunks is the ordered list of chunk hashes.
 	chunks []string
@@ -908,17 +910,31 @@ type chunkStreamReader struct {
 
 	// totalRead tracks bytes read across all chunks.
 	totalRead int64
+
+	// lastDeletedChunk tracks which chunks have been deleted.
+	// All chunks with index < lastDeletedChunk have been deleted.
+	lastDeletedChunk int
 }
 
 // newChunkStreamReader creates a reader that streams through the given chunks.
 func newChunkStreamReader(chunks []string, cache *chunkCache) *chunkStreamReader
 
 // Read implements io.Reader, reading sequentially through all chunks.
+// Chunks are deleted incrementally as they are fully consumed.
 func (r *chunkStreamReader) Read(p []byte) (n int, err error)
+
+// deleteRemainingChunks cleans up any chunks not yet deleted.
+// Call this after reconstruction completes successfully.
+func (r *chunkStreamReader) deleteRemainingChunks()
 
 // Ensure chunkStreamReader implements io.Reader.
 var _ io.Reader = (*chunkStreamReader)(nil)
 ```
+
+**Incremental Chunk Deletion:**
+- When a new chunk is loaded, the previous chunk (fully consumed) is deleted
+- This reduces disk space from ~2x model size to ~1x model size + 1 chunk
+- On reconstruction failure, unconsumed chunks remain for resume capability
 
 ## 5. CLI (`cmd/xprim-models/main.go`)
 

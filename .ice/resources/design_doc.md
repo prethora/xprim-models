@@ -325,9 +325,15 @@ The chunk cache enables resumable downloads and efficient handling of interrupte
 **Lifecycle:**
 
 1. **During download** - As each chunk is downloaded and verified, it's stored in the cache
-2. **On success** - After model files are reconstructed, chunks for that model are deleted
-3. **On failure** - Chunks remain in the cache, enabling resume on the next attempt
-4. **Cleanup** - Chunks older than 24 hours are periodically removed (stale incomplete downloads)
+2. **During reconstruction** - Chunks are deleted incrementally as they are fully consumed
+3. **On success** - All chunks for that model are deleted (any remaining cleaned up at end)
+4. **On failure** - Unconsumed chunks remain in the cache, enabling resume on the next attempt
+5. **Cleanup** - Chunks older than 24 hours are periodically removed (stale incomplete downloads)
+
+**Incremental Deletion:**
+- Chunks are deleted immediately after being fully consumed during file reconstruction
+- This reduces disk space requirements from ~2x model size to ~1x model size + 1 chunk
+- Critical for large models (e.g., 70GB) where users may not have 140GB free space
 
 **Verification on Read:**
 - When reading a cached chunk, its hash is verified against its filename
@@ -717,8 +723,10 @@ The module is designed for safe concurrent use in multi-goroutine applications.
 
 **Same-Model Serialization:**
 - Concurrent pulls of the SAME model (same group/model/version) are serialized
-- First caller proceeds; others wait for completion or return `ErrAlreadyInstalled`
-- Prevents redundant downloads and cache conflicts
+- In-process: `downloadMu` mutex serializes within a single process
+- Cross-process: File lock (`{modelDir}/.pull.lock`) serializes across processes (e.g., two terminals)
+- First caller proceeds; others wait for completion or return error
+- Prevents redundant downloads, cache conflicts, and incremental chunk deletion issues
 
 ### Progress Callback Thread Safety
 
